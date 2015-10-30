@@ -4,6 +4,7 @@ var startLocation = lauriston;
 var iconBase = "img/";
 var mapMarkers = [];
 var infowindow;
+var bounds;
 
 function initializeMap() {
     var mapOptions = {
@@ -28,6 +29,8 @@ function initializeMap() {
         styles: lightStyle,
     };
     
+    //bounds = new google.maps.LatLngBounds();
+
     map = new google.maps.Map(document.getElementById('map-canvas'),mapOptions);
     
     infowindow = new google.maps.InfoWindow();
@@ -60,11 +63,24 @@ function createMarker(selection, position) {
         map: map,
         position: position,
         title: name,
+        animation: google.maps.Animation.DROP,
         icon: iconBase + 'yelp-icon32.png'
     });
+
     
+    
+    //bounds.extend(position);
+
     mapMarkers.push(marker);
-    
+
+    function toggleBounce() {
+        if (marker.getAnimation() !== null) {
+            marker.setAnimation(null);
+        } else {
+            marker.setAnimation(google.maps.Animation.BOUNCE);
+        }
+    }
+
     var contentString = '<div id="iw-container">' +
                     '<div class="iw-title">' + name + '</div>' +
                     '<div class="iw-content">' +
@@ -76,14 +92,21 @@ function createMarker(selection, position) {
                   '</div>';
     
         google.maps.event.addListener(marker, 'click', function() {
+            toggleBounce();
         infowindow.setContent(contentString);
         infowindow.open(map, marker);
     });
     
     google.maps.event.addListener(map, 'click', function() {
-			infowindow.close();
+			marker.setAnimation(null);
+            infowindow.close();
+    });
+
+    google.maps.event.addListener(infowindow, 'closeclick', function() {
+        marker.setAnimation(null);
     });
 }
+
 
 //Hide markers from the map
 function hideMarkers() {

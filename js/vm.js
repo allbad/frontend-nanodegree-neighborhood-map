@@ -22,7 +22,7 @@ ko.bindingHandlers.addressAutocomplete = {
                 return;
             }
             if (result.geometry.viewport) {
-                map.fitbounds(result.geometry.viewport);
+                map.fitBounds(result.geometry.viewport);
             } else {
                 map.setCenter(result.geometry.location);
                 map.setZoom(16);
@@ -207,6 +207,7 @@ var MyModel = function() {
                         var loc = business.location.coordinate
                         var position = new google.maps.LatLng(loc.latitude, loc.longitude);
                         createMarker(business,position);
+                        //bounds.extend(position);
                     };
                     
                 }
