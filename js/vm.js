@@ -22,7 +22,7 @@ ko.bindingHandlers.addressAutocomplete = {
                 return;
             }
             if (result.geometry.viewport) {
-                map.fitbounds(result.geometry.viewport);
+                map.fitBounds(result.geometry.viewport);
             } else {
                 map.setCenter(result.geometry.location);
                 map.setZoom(16);
@@ -88,20 +88,92 @@ var MyModel = function() {
     
     self.businessList = ko.observableArray([]);
     
+    // Add a marker to the map and push to the array
+    self.createMarker = function(selection, position) { 
+        var name = selection.name;
+        var snippet = selection.snippet_text;
+        var category = selection.categories[0][0];
+        var image = selection.image_url;
+        var address = selection.location.display_address;
+        var phone = selection.display_phone;
+        var url = selection.url;
+        var marker = new google.maps.Marker({
+            map: map,
+            position: position,
+            title: name,
+            animation: google.maps.Animation.DROP,
+            icon: iconBase + 'yelp-icon32.png'
+        });
+        selection.marker = marker;
+
+        function toggleBounce() {
+            if (marker.getAnimation() !== null) {
+                marker.setAnimation(null);
+            } else {
+                marker.setAnimation(google.maps.Animation.BOUNCE);
+            }
+        }
+
+        var contentString = '<div id="iw-container">' +
+                    '<div class="iw-title">' + name + '</div>' +
+                    '<div class="iw-content">' +
+                      '<div class="iw-subTitle">' + category + '</div>' +
+                      '<img src="'+ image + '" alt="' + name + '" height="115" width="83">' +
+                      '<p>' + snippet + '<span><a target="_blank" href="' + url + '"> more</a></span></p>' +
+                    '</div>' +
+                    '<div class="iw-bottom-gradient"></div>' +
+                  '</div>';
+
+                google.maps.event.addListener(marker, 'click', function() {
+                    toggleBounce();
+                    infowindow.setContent(contentString);
+                    infowindow.open(map, marker);
+                });
+
+                google.maps.event.addListener(map, 'click', function() {
+                    marker.setAnimation(null);
+                    infowindow.close();
+                });
+
+                google.maps.event.addListener(infowindow, 'closeclick', function() {
+                    marker.setAnimation(null);
+                });
+            }
+
     self.pins = ko.observableArray([]);
     
     self.filter = ko.observable('');
     
     self.filterBusinessList = ko.dependentObservable(function(){
-        var filter = self.filter().toLowerCase();
-        if(!filter){
-            return self.businessList();
-        } else {
-            return ko.utils.arrayFilter(self.businessList(), function(business){
-                return business.categories[0][0].toLowerCase().indexOf(self.filter().toLowerCase()) >= 0;
-            });
+    var filter = self.filter().toLowerCase();
+
+    // Is the filter null, defined, or empty?
+    if (filter === null || filter === undefined || filter === ''){
+        // For each location object
+        for (var i = 0; i < self.businessList().length; i++) {
+            // Does the marker already exist?
+            if (self.businessList()[i].marker) {
+                self.businessList()[i].marker.setVisible(true); // show the marker
+            }
         }
-    });
+        return self.businessList(); // return all locations
+    } else {
+        // For each location object
+        for (var i = 0; i < self.businessList().length; i++) {
+            // Does the location category contain the search term?
+            if (self.businessList()[i].categories[0][0].toLowerCase().indexOf(self.filter().toLowerCase()) === -1) {
+                self.businessList()[i].marker.setVisible(false); // hide the marker
+            } else {
+                self.businessList()[i].marker.setVisible(true); // show the marker
+            }
+        }
+
+        // return businesses which contain the search term
+        return ko.utils.arrayFilter(self.businessList(), function(business){
+            return business.categories[0][0].toLowerCase().indexOf(self.filter().toLowerCase()) >= 0;
+        });
+    }
+});
     
     self.filterPins = ko.dependentObservable(function(){
         var filter = self.filter().toLowerCase();
@@ -206,7 +278,8 @@ var MyModel = function() {
                         var business = self.businessList()[i];
                         var loc = business.location.coordinate
                         var position = new google.maps.LatLng(loc.latitude, loc.longitude);
-                        createMarker(business,position);
+                        self.createMarker(business,position);
+                        //bounds.extend(position);
                     };
                     
                 }
