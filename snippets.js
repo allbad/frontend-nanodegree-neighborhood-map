@@ -15,3 +15,16 @@
                     console.log(self.uniqueCategories());
                     console.log(self.businessList()[0].name);
                 }
+
+
+//within self.displaylist
+                function filteringMarkersBy(keyword) {
+    for (var i in venueMarkers) {
+      if (venueMarkers[i].marker.map === null) {
+        venueMarkers[i].marker.setMap(map);
+      }
+      if (venueMarkers[i].name.indexOf(keyword) === -1 &&
+        venueMarkers[i].category.indexOf(keyword) === -1) {
+        venueMarkers[i].marker.setMap(null);
+      }
+    }

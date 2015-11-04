@@ -106,6 +106,8 @@ var MyModel = function() {
         });
         selection.marker = marker;
 
+        bounds.extend(position);
+
         function toggleBounce() {
             if (marker.getAnimation() !== null) {
                 marker.setAnimation(null);
@@ -139,8 +141,6 @@ var MyModel = function() {
                     marker.setAnimation(null);
                 });
             }
-
-    self.pins = ko.observableArray([]);
     
     self.filter = ko.observable('');
     
@@ -174,17 +174,6 @@ var MyModel = function() {
         });
     }
 });
-    
-    self.filterPins = ko.dependentObservable(function(){
-        var filter = self.filter().toLowerCase();
-        if(!filter){
-            return self.pins();
-        } else {
-            return ko.utils.arrayFilter(self.pins(), function(pin){
-                return pin.categories[0][0].toLowerCase().indexOf(self.filter().toLowerCase()) >= 0;
-            });
-        }
-    }); 
 
 	initializeMap();
  
@@ -195,13 +184,14 @@ var MyModel = function() {
 		}
 	});
 
-	self.businessListItem = function(clickedBusiness) {
-		var clickedBusinessName = clickedBusiness.name;
+	//Pan to marker when list item clicked
+    self.businessListItem = function(clickedBusiness) {
+		var clickedBusinessName = clickedBusiness.name.toLowerCase();
 		for (var i = 0; i < mapMarkers.length; i ++) {
 			if (clickedBusinessName === mapMarkers[i].title) {
 				google.maps.event.trigger(mapMarkers[i], 'click');
 				map.panTo(mapMarkers[i].position);
-				map.setZoom(17);
+				//map.setZoom(17);
 			}
 		}
 	};
@@ -263,7 +253,7 @@ var MyModel = function() {
 			OAuth.SignatureMethod.sign(message, accessor);
 
 			var parameterMap = OAuth.getParameterMap(message.parameters);
-			parameterMap.oauth_signature = OAuth.percentEncode(parameterMap.oauth_signature)
+			parameterMap.oauth_signature = OAuth.percentEncode(parameterMap.oauth_signature);
 			
 			//Ajax query
             $.ajax({
@@ -271,22 +261,26 @@ var MyModel = function() {
 				'data' : parameterMap,
 				'cache' : true,
 				'dataType' : 'jsonp',
+                'timeout' : 5000,
 				'jsonpCallback' : 'cb',
 				'success' : function(data, textStats, XMLHttpRequest) {
                     self.businessList(data.businesses);
                     for (var i in self.businessList()) {
                         var business = self.businessList()[i];
-                        var loc = business.location.coordinate
+                        var loc = business.location.coordinate;
                         var position = new google.maps.LatLng(loc.latitude, loc.longitude);
                         self.createMarker(business,position);
-                        //bounds.extend(position);
-                    };
-                    
+                        map.fitBounds(bounds);
+                    }
+                },
+                error: function (parsedjson, textStatus, errorThrown) {
+                    console.log("parsedJson: " + JSON.stringify(parsedjson));
+                    alert('Error: Timeout getting Yelp data');
                 }
-            }); // end of ajax query
-    }
+            });
+        };
     
-}
+};
 
 $(function() {
 	ko.applyBindings(new MyModel());
