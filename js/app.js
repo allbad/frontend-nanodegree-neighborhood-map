@@ -4,11 +4,15 @@ var startLocation = lauriston;
 var iconBase = "img/";
 var mapMarkers = [];
 var infowindow;
-var bounds;
+var mapBounds;
+var bounds = new google.maps.LatLngBounds();
+
 
 function initializeMap() {
+    
     var mapOptions = {
-        zoom: 17,
+        //zoom: 17,
+        
         center: lauriston,
         zoomControl: true,
         zoomControlOptions: {
@@ -28,8 +32,8 @@ function initializeMap() {
         },
         styles: lightStyle,
     };
+
     
-    //bounds = new google.maps.LatLngBounds();
 
     map = new google.maps.Map(document.getElementById('map-canvas'),mapOptions);
     
@@ -40,10 +44,12 @@ function initializeMap() {
         center = map.getCenter();
     }
     google.maps.event.addDomListener(map, 'idle', function() {
-      calculateCenter();
+        //map.fitBounds(mapBounds);
+        calculateCenter();
     });
     google.maps.event.addDomListener(window, 'resize', function() {
       map.setCenter(center);
+      //map.fitBounds(mapBounds);
     });
 
     

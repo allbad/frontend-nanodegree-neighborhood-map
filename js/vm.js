@@ -106,6 +106,8 @@ var MyModel = function() {
         });
         selection.marker = marker;
 
+        bounds.extend(position);
+
         function toggleBounce() {
             if (marker.getAnimation() !== null) {
                 marker.setAnimation(null);
@@ -182,13 +184,14 @@ var MyModel = function() {
 		}
 	});
 
-	self.businessListItem = function(clickedBusiness) {
-		var clickedBusinessName = clickedBusiness.name;
+	//Pan to marker when list item clicked
+    self.businessListItem = function(clickedBusiness) {
+		var clickedBusinessName = clickedBusiness.name.toLowerCase();
 		for (var i = 0; i < mapMarkers.length; i ++) {
 			if (clickedBusinessName === mapMarkers[i].title) {
 				google.maps.event.trigger(mapMarkers[i], 'click');
 				map.panTo(mapMarkers[i].position);
-				map.setZoom(17);
+				//map.setZoom(17);
 			}
 		}
 	};
@@ -267,9 +270,8 @@ var MyModel = function() {
                         var loc = business.location.coordinate;
                         var position = new google.maps.LatLng(loc.latitude, loc.longitude);
                         self.createMarker(business,position);
-                        //bounds.extend(position);
+                        map.fitBounds(bounds);
                     }
-                    
                 },
                 error: function (parsedjson, textStatus, errorThrown) {
                     console.log("parsedJson: " + JSON.stringify(parsedjson));
