@@ -16,18 +16,19 @@ ko.bindingHandlers.addressAutocomplete = {
         var autocomplete = new google.maps.places.Autocomplete(element, options);
 
         google.maps.event.addListener(autocomplete, 'place_changed', function () {
-            var result = autocomplete.getPlace();
-            if (!result.geometry) {
-                error("Can't find location");
-                return;
-            }
-            if (result.geometry.viewport) {
-                map.fitBounds(result.geometry.viewport);
+            var result = autocomplete.getPlace(); // Get search input result
+            // Does the result contain a formatted address?
+            if (!result.formatted_address) {
+                alert("Can't find location"); // alert the user
+                return
             } else {
-                map.setCenter(result.geometry.location);
-                map.setZoom(16);
+                bounds = new google.maps.LatLngBounds(); // Reset the bounds object
+                for (var i = 0; i < vm.businessList().length; i++) {
+                    vm.businessList()[i].marker.setMap(null); // remove the map marker for each location
+                }
+                vm.businessList.removeAll(); // clear the businessList observable array
+                vm.location(result.formatted_address); // update the location observable
             }
-            value(result.geometry.location);
         });
     },
     update: function (element, valueAccessor, allBindingsAccessor) {
@@ -84,6 +85,10 @@ ko.bindingHandlers.typeahead = {
 var MyModel = function() {
 	var self = this;
 
+    self.preventDefault = function(e) {
+        return false;
+    }
+
 	self.location = ko.observable("Victoria Park Rd, London E9 7HD, UK");
     
     self.businessList = ko.observableArray([]);
@@ -128,6 +133,9 @@ var MyModel = function() {
 
                 google.maps.event.addListener(marker, 'click', function() {
                     toggleBounce();
+                    window.setTimeout(function() {
+                        toggleBounce();
+                    }, 2100);
                     infowindow.setContent(contentString);
                     infowindow.open(map, marker);
                 });
@@ -145,56 +153,49 @@ var MyModel = function() {
     self.filter = ko.observable('');
     
     self.filterBusinessList = ko.dependentObservable(function(){
-    var filter = self.filter().toLowerCase();
+        var filter = self.filter().toLowerCase();
 
-    // Is the filter null, defined, or empty?
-    if (filter === null || filter === undefined || filter === ''){
+        // Is the filter null, defined, or empty?
+        if (filter === null || filter === undefined || filter === ''){
         // For each location object
         for (var i = 0; i < self.businessList().length; i++) {
-            // Does the marker already exist?
-            if (self.businessList()[i].marker) {
-                self.businessList()[i].marker.setVisible(true); // show the marker
+                // Does the marker already exist?
+                if (self.businessList()[i].marker) {
+                    self.businessList()[i].marker.setVisible(true); // show the marker
+                }
             }
-        }
-        return self.businessList(); // return all locations
-    } else {
-        // For each location object
-        for (var i = 0; i < self.businessList().length; i++) {
-            // Does the location category contain the search term?
-            if (self.businessList()[i].categories[0][0].toLowerCase().indexOf(self.filter().toLowerCase()) === -1) {
-                self.businessList()[i].marker.setVisible(false); // hide the marker
-            } else {
-                self.businessList()[i].marker.setVisible(true); // show the marker
+            return self.businessList(); // return all locations
+        } else {
+            // For each location object
+            for (var i = 0; i < self.businessList().length; i++) {
+                // Does the location category contain the search term?
+                if (self.businessList()[i].categories[0][0].toLowerCase().indexOf(self.filter().toLowerCase()) === -1) {
+                    self.businessList()[i].marker.setVisible(false); // hide the marker
+                } else {
+                    self.businessList()[i].marker.setVisible(true); // show the marker
+                }
             }
-        }
 
-        // return businesses which contain the search term
-        return ko.utils.arrayFilter(self.businessList(), function(business){
-            return business.categories[0][0].toLowerCase().indexOf(self.filter().toLowerCase()) >= 0;
-        });
-    }
-});
+            // return businesses which contain the search term
+            return ko.utils.arrayFilter(self.businessList(), function(business){
+                return business.categories[0][0].toLowerCase().indexOf(self.filter().toLowerCase()) >= 0;
+            });
+        }
+    });
 
 	initializeMap();
  
 	self.newLocation = ko.computed(function() {
-		if (self.location() != '') {
-            deleteMarkers();
-			requestLocation(self.location());
-		}
-	});
+        if (self.location() != '') {
+            requestLocation(self.location());
+        }
+    });
 
 	//Pan to marker when list item clicked
     self.businessListItem = function(clickedBusiness) {
-		var clickedBusinessName = clickedBusiness.name.toLowerCase();
-		for (var i = 0; i < mapMarkers.length; i ++) {
-			if (clickedBusinessName === mapMarkers[i].title) {
-				google.maps.event.trigger(mapMarkers[i], 'click');
-				map.panTo(mapMarkers[i].position);
-				//map.setZoom(17);
-			}
-		}
-	};
+        google.maps.event.trigger(clickedBusiness.marker, 'click');
+        map.panTo(clickedBusiness.marker.position);
+    };
     
     // get location data using Google Map Place Service
 	function requestLocation(location) {
@@ -282,6 +283,8 @@ var MyModel = function() {
     
 };
 
+var vm;
 $(function() {
-	ko.applyBindings(new MyModel());
+    vm = new MyModel(); // Assign MyModel object to a variable
+    ko.applyBindings(vm); // Apply bindings to vm variable
 });

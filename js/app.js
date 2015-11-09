@@ -55,20 +55,6 @@ function initializeMap() {
     
 }
 
-
-//Hide markers from the map
-function hideMarkers() {
-  for (var i = 0; i < mapMarkers.length; i++) {
-    mapMarkers[i].setMap(null);
-  }
-}
-
-//Remove markers from the map and and clear the array
-function deleteMarkers() {
-  hideMarkers();
-  mapMarkers = [];
-}
-
 //Map-canvas in container-fluid fix
 $(window).resize(function () {
     var h = $(window).height();
