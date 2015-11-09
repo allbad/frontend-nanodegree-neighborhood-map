@@ -75,7 +75,7 @@
                             <div> <a href="#menu-toggle" class="btn btn-danger" id="menu-toggle">
                                 <span class="glyphicon glyphicon-menu-hamburger"></span></a>
                             </div>
-                            <form class="input-group" id="search-box">
+                            <form class="input-group" id="search-box" data-bind="submit: preventDefault">
                                 <input class="form-control" type="text" 
                                        data-bind="addressAutocomplete: location" 
                                        placeholder="Where do you want to search?">
